@@ -1,286 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>PFRA Score Analyzer</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PFRA Dashboard</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="styles.css"/>
 
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #0f172a;
-    color: white;
-    margin: 0;
-    padding: 20px;
-  }
-
-  h1 { text-align: center; }
-
-  .container {
-    max-width: 1400px;
-    margin: auto;
-  }
-
-  .card {
-    background: #1e293b;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-  }
-
-  input, select, button {
-    padding: 10px;
-    margin: 5px;
-    border-radius: 8px;
-    border: none;
-  }
-
-  button {
-    background: #3b82f6;
-    color: white;
-    cursor: pointer;
-    font-weight: bold;
-  }
-
-  button:hover { background: #2563eb; }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-
-  th, td {
-    border: 1px solid #334155;
-    padding: 8px;
-    text-align: center;
-  }
-
-  th { background: #334155; }
-
-  canvas {
-    background: white;
-    border-radius: 10px;
-    padding: 10px;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-    gap: 20px;
-  }
-
-  .small { font-size: 12px; color: #cbd5e1; }
-</style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
 
 <div class="container">
 
-<h1>PFRA Score Analyzer</h1>
+  <h1>PFRA Force Dashboard</h1>
 
-<div class="card">
-  <h2>Add Member</h2>
+  <!-- FILTERS -->
+  <div class="card">
+    <h2>Filters</h2>
 
-  <input id="name" type="text" placeholder="Name">
-  
-  <select id="gender">
-    <option>Male</option>
-    <option>Female</option>
-  </select>
+    <select id="unitFilter" onchange="applyFilters()">
+      <option value="">All Units</option>
+    </select>
 
-  <input id="age" type="number" placeholder="Age">
+    <select id="flightFilter" onchange="applyFilters()">
+      <option value="">All Flights</option>
+    </select>
 
-  <input id="cardio" type="number" placeholder="Cardio (0-50)" step="0.1">
-  <input id="strength" type="number" placeholder="Strength (0-15)" step="0.1">
-  <input id="core" type="number" placeholder="Core (0-15)" step="0.1">
-  <input id="waist" type="number" placeholder="Waist (0-20)" step="0.1">
+    <input type="file" id="csvInput" accept=".csv"/>
+  </div>
 
-  <button onclick="addEntry()">Add Score</button>
+  <!-- KPI -->
+  <div class="card" id="kpiBox"></div>
+
+  <!-- INPUT -->
+  <div class="card">
+    <h2>Add / Edit Member</h2>
+
+    <input id="name" placeholder="Name"/>
+    <select id="gender">
+      <option>Male</option>
+      <option>Female</option>
+    </select>
+
+    <input id="age" type="number" placeholder="Age"/>
+    <input id="unit" placeholder="Unit"/>
+    <input id="flight" placeholder="Flight"/>
+
+    <input id="cardio" type="number" placeholder="Cardio (0-50)"/>
+    <input id="strength" type="number" placeholder="Strength (0-15)"/>
+    <input id="core" type="number" placeholder="Core (0-15)"/>
+    <input id="waist" type="number" placeholder="Waist (0-20)"/>
+
+    <button onclick="saveFromForm()">Save Member</button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="card">
+    <h2>Members</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th><th>Unit</th><th>Flight</th>
+          <th>Cardio</th><th>Strength</th><th>Core</th><th>Waist</th>
+          <th>Total</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="grid">
+    <div class="card"><canvas id="barChart"></canvas></div>
+    <div class="card"><canvas id="radarChart"></canvas></div>
+    <div class="card"><canvas id="pieChart"></canvas></div>
+    <div class="card"><canvas id="lineChart"></canvas></div>
+  </div>
+
 </div>
 
-<div class="card">
-  <h2>Table</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th><th>Gender</th><th>Age</th>
-        <th>Cardio</th><th>Strength</th><th>Core</th><th>Waist</th>
-        <th>Total</th><th>Category</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
-</div>
-
-<div class="grid">
-  <div class="card"><canvas id="totalChart"></canvas></div>
-  <div class="card"><canvas id="radarChart"></canvas></div>
-  <div class="card"><canvas id="categoryChart"></canvas></div>
-  <div class="card"><canvas id="lineChart"></canvas></div>
-</div>
-
-</div>
-
-<script>
-let members = [];
-
-function totalScore(m) {
-  return m.cardio + m.strength + m.core + m.waist;
-}
-
-function category(score) {
-  if (score >= 90) return "Excellent";
-  if (score >= 80) return "Satisfactory";
-  if (score >= 75) return "Marginal";
-  return "Unsat";
-}
-
-function getVal(id) {
-  return document.getElementById(id).value;
-}
-
-function addEntry() {
-
-  const m = {
-    name: getVal("name").trim(),
-    gender: getVal("gender"),
-    age: parseInt(getVal("age")),
-    cardio: parseFloat(getVal("cardio")),
-    strength: parseFloat(getVal("strength")),
-    core: parseFloat(getVal("core")),
-    waist: parseFloat(getVal("waist"))
-  };
-
-  if (
-    !m.name ||
-    isNaN(m.age) ||
-    isNaN(m.cardio) ||
-    isNaN(m.strength) ||
-    isNaN(m.core) ||
-    isNaN(m.waist)
-  ) {
-    alert("Please fill all fields correctly.");
-    return;
-  }
-
-  m.total = totalScore(m);
-  m.category = category(m.total);
-
-  members.push(m);
-
-  renderTable();
-  renderCharts();
-  resetForm();
-}
-
-function resetForm() {
-  ["name","age","cardio","strength","core","waist"].forEach(id => {
-    document.getElementById(id).value = "";
-  });
-  document.getElementById("gender").selectedIndex = 0;
-}
-
-function renderTable() {
-  const tbody = document.getElementById("tableBody");
-  tbody.innerHTML = "";
-
-  members.forEach(m => {
-    const row = document.createElement("tr");
-
-    row.innerHTML = `
-      <td>${m.name}</td>
-      <td>${m.gender}</td>
-      <td>${m.age}</td>
-      <td>${m.cardio}</td>
-      <td>${m.strength}</td>
-      <td>${m.core}</td>
-      <td>${m.waist}</td>
-      <td>${m.total.toFixed(1)}</td>
-      <td>${m.category}</td>
-    `;
-
-    tbody.appendChild(row);
-  });
-}
-
-let totalChart, radarChart, categoryChart, lineChart;
-
-function renderCharts() {
-
-  const names = members.map(m => m.name);
-  const totals = members.map(m => m.total);
-
-  const avg = (key) =>
-    members.length ? members.reduce((a,b)=>a+b[key],0)/members.length : 0;
-
-  const categories = { Excellent:0, Satisfactory:0, Marginal:0, Unsat:0 };
-  members.forEach(m => categories[m.category]++);
-
-  totalChart?.destroy();
-  radarChart?.destroy();
-  categoryChart?.destroy();
-  lineChart?.destroy();
-
-  totalChart = new Chart(document.getElementById("totalChart"), {
-    type: "bar",
-    data: {
-      labels: names,
-      datasets: [{
-        label: "Total Score",
-        data: totals,
-        backgroundColor: "#3b82f6"
-      }]
-    },
-    options: { scales: { y: { beginAtZero: true, max: 100 } } }
-  });
-
-  radarChart = new Chart(document.getElementById("radarChart"), {
-    type: "radar",
-    data: {
-      labels: ["Cardio","Strength","Core","Waist"],
-      datasets: [{
-        label: "Averages",
-        data: [avg("cardio"), avg("strength"), avg("core"), avg("waist")],
-        backgroundColor: "rgba(59,130,246,0.2)",
-        borderColor: "#3b82f6"
-      }]
-    },
-    options: {
-      scales: {
-        r: { beginAtZero: true, max: 50 }
-      }
-    }
-  });
-
-  categoryChart = new Chart(document.getElementById("categoryChart"), {
-    type: "pie",
-    data: {
-      labels: Object.keys(categories),
-      datasets: [{
-        data: Object.values(categories),
-        backgroundColor: ["#22c55e","#3b82f6","#facc15","#ef4444"]
-      }]
-    }
-  });
-
-  lineChart = new Chart(document.getElementById("lineChart"), {
-    type: "line",
-    data: {
-      labels: names,
-      datasets: [
-        { label:"Cardio", data: members.map(m=>m.cardio), borderColor:"#3b82f6" },
-        { label:"Strength", data: members.map(m=>m.strength), borderColor:"#22c55e" },
-        { label:"Core", data: members.map(m=>m.core), borderColor:"#facc15" },
-        { label:"Waist", data: members.map(m=>m.waist), borderColor:"#ef4444" }
-      ]
-    }
-  });
-}
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>
