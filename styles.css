@@ -1,19 +1,17 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   background: #0f172a;
   color: white;
   margin: 0;
   padding: 20px;
 }
 
-h1 {
-  text-align: center;
-}
-
 .container {
   max-width: 1400px;
   margin: auto;
 }
+
+h1 { text-align: center; }
 
 .card {
   background: #1e293b;
@@ -33,7 +31,6 @@ button {
   background: #3b82f6;
   color: white;
   cursor: pointer;
-  font-weight: bold;
 }
 
 button:hover {
@@ -57,7 +54,7 @@ th {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(400px,1fr));
   gap: 15px;
 }
 
