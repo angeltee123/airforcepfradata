@@ -3,6 +3,11 @@ let editIndex = null;
 
 let barChart, radarChart, pieChart, lineChart;
 
+/* ---------------- INIT ---------------- */
+
+loadData();
+renderAll();
+
 /* ---------------- STORAGE ---------------- */
 
 function saveData() {
@@ -14,7 +19,7 @@ function loadData() {
   members = data ? JSON.parse(data) : [];
 }
 
-/* ---------------- CORE LOGIC ---------------- */
+/* ---------------- CORE ---------------- */
 
 function total(m) {
   return m.cardio + m.strength + m.core + m.waist;
@@ -27,22 +32,35 @@ function category(score) {
   return "Unsat";
 }
 
-/* ---------------- CRUD ---------------- */
+/* ---------------- FORM ---------------- */
 
 function saveFromForm() {
+
   const m = {
-    name: name.value.trim(),
-    gender: gender.value,
-    age: +age.value,
-    unit: unit.value.trim(),
-    flight: flight.value.trim(),
-    cardio: +cardio.value,
-    strength: +strength.value,
-    core: +core.value,
-    waist: +waist.value
+    name: document.getElementById("name").value.trim(),
+    gender: document.getElementById("gender").value,
+    age: parseInt(document.getElementById("age").value),
+
+    unit: document.getElementById("unit").value.trim(),
+    flight: document.getElementById("flight").value.trim(),
+
+    cardio: parseFloat(document.getElementById("cardio").value),
+    strength: parseFloat(document.getElementById("strength").value),
+    core: parseFloat(document.getElementById("core").value),
+    waist: parseFloat(document.getElementById("waist").value)
   };
 
-  if (!m.name || isNaN(m.age)) return alert("Invalid input");
+  if (
+    !m.name ||
+    isNaN(m.age) ||
+    isNaN(m.cardio) ||
+    isNaN(m.strength) ||
+    isNaN(m.core) ||
+    isNaN(m.waist)
+  ) {
+    alert("Please fill all fields correctly");
+    return;
+  }
 
   m.total = total(m);
   m.category = category(m.total);
@@ -65,15 +83,15 @@ function editMember(i) {
   const m = members[i];
   editIndex = i;
 
-  name.value = m.name;
-  gender.value = m.gender;
-  age.value = m.age;
-  unit.value = m.unit;
-  flight.value = m.flight;
-  cardio.value = m.cardio;
-  strength.value = m.strength;
-  core.value = m.core;
-  waist.value = m.waist;
+  document.getElementById("name").value = m.name;
+  document.getElementById("gender").value = m.gender;
+  document.getElementById("age").value = m.age;
+  document.getElementById("unit").value = m.unit;
+  document.getElementById("flight").value = m.flight;
+  document.getElementById("cardio").value = m.cardio;
+  document.getElementById("strength").value = m.strength;
+  document.getElementById("core").value = m.core;
+  document.getElementById("waist").value = m.waist;
 }
 
 function deleteMember(i) {
@@ -89,34 +107,36 @@ function renderTable(data = members) {
   tbody.innerHTML = "";
 
   data.forEach((m, i) => {
-    tbody.innerHTML += `
-      <tr>
-        <td>${m.name}</td>
-        <td>${m.unit}</td>
-        <td>${m.flight}</td>
-        <td>${m.cardio}</td>
-        <td>${m.strength}</td>
-        <td>${m.core}</td>
-        <td>${m.waist}</td>
-        <td>${m.total}</td>
-        <td>
-          <button onclick="editMember(${i})">Edit</button>
-          <button onclick="deleteMember(${i})">X</button>
-        </td>
-      </tr>
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${m.name}</td>
+      <td>${m.unit}</td>
+      <td>${m.flight}</td>
+      <td>${m.cardio}</td>
+      <td>${m.strength}</td>
+      <td>${m.core}</td>
+      <td>${m.waist}</td>
+      <td>${m.total}</td>
+      <td>
+        <button onclick="editMember(${i})">Edit</button>
+        <button onclick="deleteMember(${i})">X</button>
+      </td>
     `;
+
+    tbody.appendChild(row);
   });
 }
 
 /* ---------------- FILTERS ---------------- */
 
 function applyFilters() {
-  const u = unitFilter.value;
-  const f = flightFilter.value;
+  const unit = document.getElementById("unitFilter").value;
+  const flight = document.getElementById("flightFilter").value;
 
   const filtered = members.filter(m =>
-    (!u || m.unit === u) &&
-    (!f || m.flight === f)
+    (!unit || m.unit === unit) &&
+    (!flight || m.flight === flight)
   );
 
   renderTable(filtered);
@@ -127,13 +147,14 @@ function applyFilters() {
 /* ---------------- KPIs ---------------- */
 
 function updateKPIs(data = members) {
+
   const count = data.length || 1;
 
   const avg = data.reduce((a,b)=>a+b.total,0)/count;
   const pass = (data.filter(m=>m.total>=80).length/count)*100;
   const elite = (data.filter(m=>m.total>=90).length/count)*100;
 
-  kpiBox.innerHTML = `
+  document.getElementById("kpiBox").innerHTML = `
     <h2>KPIs</h2>
     <p>Avg Score: ${avg.toFixed(1)}</p>
     <p>Pass Rate: ${pass.toFixed(1)}%</p>
@@ -153,7 +174,7 @@ function renderCharts(data = members) {
   pieChart?.destroy();
   lineChart?.destroy();
 
-  barChart = new Chart(barChartCanvas, {
+  barChart = new Chart(document.getElementById("barChart"), {
     type: "bar",
     data: {
       labels: names,
@@ -165,18 +186,15 @@ function renderCharts(data = members) {
     }
   });
 
-  radarChart = new Chart(radarChartCanvas, {
+  radarChart = new Chart(document.getElementById("radarChart"), {
     type: "radar",
     data: {
       labels: ["Cardio","Strength","Core","Waist"],
       datasets: [{
         label: "Avg",
-        data: [
-          avg(data,"cardio"),
-          avg(data,"strength"),
-          avg(data,"core"),
-          avg(data,"waist")
-        ],
+        data: ["cardio","strength","core","waist"].map(k =>
+          data.length ? data.reduce((a,b)=>a+b[k],0)/data.length : 0
+        ),
         borderColor: "#3b82f6"
       }]
     }
@@ -185,7 +203,7 @@ function renderCharts(data = members) {
   const cats = {Excellent:0,Satisfactory:0,Marginal:0,Unsat:0};
   data.forEach(m=>cats[m.category]++);
 
-  pieChart = new Chart(pieChartCanvas, {
+  pieChart = new Chart(document.getElementById("pieChart"), {
     type: "pie",
     data: {
       labels: Object.keys(cats),
@@ -196,12 +214,12 @@ function renderCharts(data = members) {
     }
   });
 
-  lineChart = new Chart(lineChartCanvas, {
+  lineChart = new Chart(document.getElementById("lineChart"), {
     type: "line",
     data: {
       labels: names,
       datasets: [{
-        label:"Score",
+        label: "Total Score",
         data: data.map(m=>m.total),
         borderColor:"#3b82f6"
       }]
@@ -209,41 +227,18 @@ function renderCharts(data = members) {
   });
 }
 
-function avg(data,key){
-  return data.length
-    ? data.reduce((a,b)=>a+b[key],0)/data.length
-    : 0;
-}
-
-/* ---------------- UTILS ---------------- */
+/* ---------------- UTIL ---------------- */
 
 function clearForm() {
-  [name,age,unit,flight,cardio,strength,core,waist]
-    .forEach(i=>i.value="");
-  gender.selectedIndex = 0;
+  ["name","age","unit","flight","cardio","strength","core","waist"]
+    .forEach(id => document.getElementById(id).value = "");
+  document.getElementById("gender").selectedIndex = 0;
 }
 
-/* ---------------- INIT ---------------- */
+/* ---------------- RENDER ALL ---------------- */
 
-function renderAll(){
+function renderAll() {
   renderTable();
   renderCharts();
   updateKPIs();
-  updateFilters();
 }
-
-function updateFilters(){
-  const units = [...new Set(members.map(m=>m.unit))];
-  const flights = [...new Set(members.map(m=>m.flight))];
-
-  unitFilter.innerHTML = `<option value="">All Units</option>` +
-    units.map(u=>`<option>${u}</option>`).join("");
-
-  flightFilter.innerHTML = `<option value="">All Flights</option>` +
-    flights.map(f=>`<option>${f}</option>`).join("");
-}
-
-/* ---------------- START ---------------- */
-
-loadData();
-renderAll();
