@@ -1,83 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PFRA Dashboard</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PFRA Dashboard</title>
 
-  <link rel="stylesheet" href="styles.css"/>
+<link rel="stylesheet" href="styles.css"/>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
 
 <div class="container">
 
-  <h1>PFRA Force Dashboard</h1>
+<h1>PFRA Force Dashboard</h1>
 
-  <!-- FILTERS -->
-  <div class="card">
-    <h2>Filters</h2>
+<!-- FILTERS -->
+<div class="card">
+  <h2>Filters</h2>
 
-    <select id="unitFilter" onchange="applyFilters()">
-      <option value="">All Units</option>
-    </select>
+  <select id="unitFilter" onchange="applyFilters()">
+    <option value="">All Units</option>
+  </select>
 
-    <select id="flightFilter" onchange="applyFilters()">
-      <option value="">All Flights</option>
-    </select>
+  <select id="flightFilter" onchange="applyFilters()">
+    <option value="">All Flights</option>
+  </select>
 
-    <input type="file" id="csvInput" accept=".csv"/>
-  </div>
+  <input type="file" id="csvInput" accept=".csv"/>
+</div>
 
-  <!-- KPI -->
-  <div class="card" id="kpiBox"></div>
+<!-- KPI -->
+<div class="card" id="kpiBox"></div>
 
-  <!-- INPUT -->
-  <div class="card">
-    <h2>Add / Edit Member</h2>
+<!-- INPUT -->
+<div class="card">
+  <h2>Add / Edit Member</h2>
 
-    <input id="name" placeholder="Name"/>
-    <select id="gender">
-      <option>Male</option>
-      <option>Female</option>
-    </select>
+  <input id="name" placeholder="Name"/>
+  <select id="gender">
+    <option>Male</option>
+    <option>Female</option>
+  </select>
 
-    <input id="age" type="number" placeholder="Age"/>
-    <input id="unit" placeholder="Unit"/>
-    <input id="flight" placeholder="Flight"/>
+  <input id="age" type="number" placeholder="Age"/>
+  <input id="unit" placeholder="Unit"/>
+  <input id="flight" placeholder="Flight"/>
 
-    <input id="cardio" type="number" placeholder="Cardio (0-50)"/>
-    <input id="strength" type="number" placeholder="Strength (0-15)"/>
-    <input id="core" type="number" placeholder="Core (0-15)"/>
-    <input id="waist" type="number" placeholder="Waist (0-20)"/>
+  <input id="cardio" type="number" placeholder="Cardio (0-50)"/>
+  <input id="strength" type="number" placeholder="Strength (0-15)"/>
+  <input id="core" type="number" placeholder="Core (0-15)"/>
+  <input id="waist" type="number" placeholder="Waist (0-20)"/>
 
-    <button onclick="saveFromForm()">Save Member</button>
-  </div>
+  <button onclick="saveFromForm()">Save Member</button>
+</div>
 
-  <!-- TABLE -->
-  <div class="card">
-    <h2>Members</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th><th>Unit</th><th>Flight</th>
-          <th>Cardio</th><th>Strength</th><th>Core</th><th>Waist</th>
-          <th>Total</th><th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
+<!-- TABLE -->
+<div class="card">
+  <h2>Members</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th><th>Unit</th><th>Flight</th>
+        <th>Cardio</th><th>Strength</th><th>Core</th><th>Waist</th>
+        <th>Total</th><th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
 
-  <!-- CHARTS -->
-  <div class="grid">
-    <div class="card"><canvas id="barChart"></canvas></div>
-    <div class="card"><canvas id="radarChart"></canvas></div>
-    <div class="card"><canvas id="pieChart"></canvas></div>
-    <div class="card"><canvas id="lineChart"></canvas></div>
-  </div>
+<!-- CHARTS -->
+<div class="grid">
+  <div class="card"><canvas id="barChart"></canvas></div>
+  <div class="card"><canvas id="radarChart"></canvas></div>
+  <div class="card"><canvas id="pieChart"></canvas></div>
+  <div class="card"><canvas id="lineChart"></canvas></div>
+</div>
 
 </div>
 
