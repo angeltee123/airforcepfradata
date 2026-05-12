@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>USAF PFRA Score Analyzer</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: auto;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    input, select, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    button {
+      background: #3b82f6;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #334155;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background: #334155;
+    }
+
+    canvas {
+      background: white;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(450px,1fr));
+      gap: 20px;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <h1>USAF PFRA Score Analyzer</h1>
+  <p class="small">
+    Enter PFRA component scores manually using the March 2026 scoring charts.
+    This dashboard helps visualize trends across many Airmen.
+  </p>
+
+  <div class="card">
+
+    <h2>Add Member Score</h2>
+
+    <input type="text" id="name" placeholder="Name">
+
+    <select id="gender">
+      <option>Male</option>
+      <option>Female</option>
+    </select>
+
+    <input type="number" id="age" placeholder="Age">
+
+    <input type="number" id="cardio" placeholder="Cardio Score (0-50)" step="0.1">
+
+    <input type="number" id="strength" placeholder="Strength Score (0-15)" step="0.1">
+
+    <input type="number" id="core" placeholder="Core Score (0-15)" step="0.1">
+
+    <input type="number" id="waist" placeholder="Waist-to-Height Score (0-20)" step="0.1">
+
+    <button onclick="addEntry()">Add Score</button>
+
+  </div>
+
+  <div class="card">
+
+    <h2>PFRA Data Table</h2>
+
+    <table id="scoreTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Gender</th>
+          <th>Age</th>
+          <th>Cardio</th>
+          <th>Strength</th>
+          <th>Core</th>
+          <th>Waist</th>
+          <th>Total</th>
+          <th>Category</th>
+        </tr>
+      </thead>
+
+      <tbody></tbody>
+    </table>
+
+  </div>
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>Total Score Distribution</h2>
+      <canvas id="totalChart"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Component Average Comparison</h2>
+      <canvas id="componentChart"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Performance Categories</h2>
+      <canvas id="categoryChart"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Individual Scores</h2>
+      <canvas id="individualChart"></canvas>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+let members = [];
+
+function calculateTotal(cardio, strength, core, waist) {
+  return cardio + strength + core + waist;
+}
+
+function getCategory(score) {
+  if (score >= 90) return "Excellent";
+  if (score >= 80) return "Satisfactory";
+  if (score >= 75) return "Marginal";
+  return "Unsat";
+}
+
+function addEntry() {
+
+  const member = {
+    name: document.getElementById('name').value,
+    gender: document.getElementById('gender').value,
+    age: parseInt(document.getElementById('age').value),
+    cardio: parseFloat(document.getElementById('cardio').value),
+    strength: parseFloat(document.getElementById('strength').value),
+    core: parseFloat(document.getElementById('core').value),
+    waist: parseFloat(document.getElementById('waist').value)
+  };
+
+  member.total = calculateTotal(
+    member.cardio,
+    member.strength,
+    member.core,
+    member.waist
+  );
+
+  member.category = getCategory(member.total);
+
+  members.push(member);
+
+  updateTable();
+  updateCharts();
+
+  document.querySelectorAll("input").forEach(i => i.value = "");
+}
+
+function updateTable() {
+
+  const tbody = document.querySelector("#scoreTable tbody");
+
+  tbody.innerHTML = "";
+
+  members.forEach(m => {
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${m.name}</td>
+        <td>${m.gender}</td>
+        <td>${m.age}</td>
+        <td>${m.cardio}</td>
+        <td>${m.strength}</td>
+        <td>${m.core}</td>
+        <td>${m.waist}</td>
+        <td>${m.total.toFixed(1)}</td>
+        <td>${m.category}</td>
+      </tr>
+    `;
+  });
+}
+
+let totalChart;
+let componentChart;
+let categoryChart;
+let individualChart;
+
+function updateCharts() {
+
+  const names = members.map(m => m.name);
+  const totals = members.map(m => m.total);
+
+  const cardioAvg =
+    members.reduce((a,b)=>a+b.cardio,0)/members.length || 0;
+
+  const strengthAvg =
+    members.reduce((a,b)=>a+b.strength,0)/members.length || 0;
+
+  const coreAvg =
+    members.reduce((a,b)=>a+b.core,0)/members.length || 0;
+
+  const waistAvg =
+    members.reduce((a,b)=>a+b.waist,0)/members.length || 0;
+
+  const categories = {
+    Excellent: 0,
+    Satisfactory: 0,
+    Marginal: 0,
+    Unsat: 0
+  };
+
+  members.forEach(m => {
+    categories[m.category]++;
+  });
+
+  if (totalChart) totalChart.destroy();
+
+  totalChart = new Chart(
+    document.getElementById('totalChart'),
+    {
+      type: 'bar',
+      data: {
+        labels: names,
+        datasets: [{
+          label: 'Total PFRA Score',
+          data: totals,
+          backgroundColor: '#3b82f6'
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100
+          }
+        }
+      }
+    }
+  );
+
+  if (componentChart) componentChart.destroy();
+
+  componentChart = new Chart(
+    document.getElementById('componentChart'),
+    {
+      type: 'radar',
+      data: {
+        labels: ['Cardio','Strength','Core','Waist'],
+        datasets: [{
+          label: 'Average Scores',
+          data: [
+            cardioAvg,
+            strengthAvg,
+            coreAvg,
+            waistAvg
+          ],
+          backgroundColor: 'rgba(59,130,246,0.2)',
+          borderColor: '#3b82f6'
+        }]
+      }
+    }
+  );
+
+  if (categoryChart) categoryChart.destroy();
+
+  categoryChart = new Chart(
+    document.getElementById('categoryChart'),
+    {
+      type: 'pie',
+      data: {
+        labels: Object.keys(categories),
+        datasets: [{
+          data: Object.values(categories),
+          backgroundColor: [
+            '#22c55e',
+            '#3b82f6',
+            '#facc15',
+            '#ef4444'
+          ]
+        }]
+      }
+    }
+  );
+
+  if (individualChart) individualChart.destroy();
+
+  individualChart = new Chart(
+    document.getElementById('individualChart'),
+    {
+      type: 'line',
+      data: {
+        labels: names,
+        datasets: [
+          {
+            label: 'Cardio',
+            data: members.map(m=>m.cardio),
+            borderColor: '#3b82f6'
+          },
+          {
+            label: 'Strength',
+            data: members.map(m=>m.strength),
+            borderColor: '#22c55e'
+          },
+          {
+            label: 'Core',
+            data: members.map(m=>m.core),
+            borderColor: '#facc15'
+          },
+          {
+            label: 'Waist',
+            data: members.map(m=>m.waist),
+            borderColor: '#ef4444'
+          }
+        ]
+      }
+    }
+  );
+}
+
+</script>
+
+</body>
+</html>
