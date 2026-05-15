@@ -3,84 +3,937 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>PFRA Dashboard</title>
+<title>Air Force PFRA Analytics Dashboard</title>
 
-<link rel="stylesheet" href="styles.css"/>
-
+<!-- CHART -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- EXPORT -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Arial,sans-serif;
+}
+
+body{
+  background:#0f172a;
+  color:white;
+  display:flex;
+  min-height:100vh;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+  width:280px;
+  background:#111827;
+  padding:20px;
+  border-right:2px solid #1e293b;
+}
+
+.sidebar h1{
+  color:#38bdf8;
+  margin-bottom:20px;
+}
+
+.sidebar p{
+  color:#cbd5e1;
+  margin-bottom:10px;
+}
+
+/* MAIN */
+
+.main{
+  flex:1;
+  padding:20px;
+  overflow:auto;
+}
+
+/* SECTION */
+
+.section{
+  background:#1e293b;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
+}
+
+/* COLLAPSIBLE */
+
+.collapsible-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  cursor:pointer;
+  user-select:none;
+}
+
+.collapsible-header:hover{
+  opacity:0.9;
+}
+
+.collapsible-content{
+  overflow:hidden;
+  transition:max-height 0.3s ease;
+}
+
+.collapsed{
+  max-height:0 !important;
+  padding-top:0 !important;
+  overflow:hidden;
+}
+
+.toggle-icon{
+  font-size:20px;
+  color:#38bdf8;
+}
+
+/* CARDS */
+
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:15px;
+  margin-bottom:20px;
+}
+
+.card{
+  background:#111827;
+  padding:20px;
+  border-radius:10px;
+}
+
+.card h3{
+  color:#38bdf8;
+  margin-bottom:10px;
+}
+
+.card .value{
+  font-size:28px;
+  font-weight:bold;
+}
+
+/* TABLE */
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th{
+  background:#0f172a;
+  color:#38bdf8;
+}
+
+th,td{
+  border:1px solid #334155;
+  padding:10px;
+}
+
+input{
+  width:100%;
+  padding:8px;
+  background:#334155;
+  border:none;
+  color:white;
+}
+
+select{
+  width:100%;
+  padding:10px;
+  background:#334155;
+  border:none;
+  color:white;
+  border-radius:8px;
+}
+
+button{
+  padding:12px 18px;
+  background:#0ea5e9;
+  border:none;
+  color:white;
+  border-radius:8px;
+  cursor:pointer;
+  margin-top:15px;
+  margin-right:10px;
+  font-weight:bold;
+}
+
+button:hover{
+  background:#0284c7;
+}
+
+/* GRID */
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:15px;
+}
+
+/* CHART */
+
+.chart-box{
+  background:#111827;
+  padding:20px;
+  border-radius:12px;
+  position:relative;
+  width:100%;
+  min-height:550px;
+  margin-bottom:20px;
+}
+
+.chart-container{
+  position:relative;
+  width:100%;
+  height:450px;
+}
+
+/* DRILLDOWN */
+
+#drilldown{
+  margin-top:20px;
+}
+
+.drill-card{
+  background:#111827;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:10px;
+}
+
+.drill-card h4{
+  color:#38bdf8;
+  margin-bottom:5px;
+}
+
+/* MOBILE */
+
+@media(max-width:900px){
+
+  body{
+    flex-direction:column;
+  }
+
+  .sidebar{
+    width:100%;
+    border-right:none;
+    border-bottom:2px solid #1e293b;
+  }
+
+  .chart-box{
+    min-height:500px;
+  }
+
+  .chart-container{
+    height:400px;
+  }
+
+}
+
+</style>
 </head>
 
 <body>
 
-<div class="container">
+<!-- SIDEBAR -->
 
-<h1>PFRA Force Dashboard</h1>
+<div class="sidebar">
 
-<!-- FILTERS -->
-<div class="card">
-  <h2>Filters</h2>
+  <h1>PFRA Analytics</h1>
 
-  <select id="unitFilter" onchange="applyFilters()">
-    <option value="">All Units</option>
-  </select>
-
-  <select id="flightFilter" onchange="applyFilters()">
-    <option value="">All Flights</option>
-  </select>
-
-  <input type="file" id="csvInput" accept=".csv"/>
-</div>
-
-<!-- KPI -->
-<div class="card" id="kpiBox"></div>
-
-<!-- INPUT -->
-<div class="card">
-  <h2>Add / Edit Member</h2>
-
-  <input id="name" placeholder="Name"/>
-  <select id="gender">
-    <option>Male</option>
-    <option>Female</option>
-  </select>
-
-  <input id="age" type="number" placeholder="Age"/>
-  <input id="unit" placeholder="Unit"/>
-  <input id="flight" placeholder="Flight"/>
-
-  <input id="cardio" type="number" placeholder="Cardio (0-50)"/>
-  <input id="strength" type="number" placeholder="Strength (0-15)"/>
-  <input id="core" type="number" placeholder="Core (0-15)"/>
-  <input id="waist" type="number" placeholder="Waist (0-20)"/>
-
-  <button onclick="saveFromForm()">Save Member</button>
-</div>
-
-<!-- TABLE -->
-<div class="card">
-  <h2>Members</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th><th>Unit</th><th>Flight</th>
-        <th>Cardio</th><th>Strength</th><th>Core</th><th>Waist</th>
-        <th>Total</th><th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
-</div>
-
-<!-- CHARTS -->
-<div class="grid">
-  <div class="card"><canvas id="barChart"></canvas></div>
-  <div class="card"><canvas id="radarChart"></canvas></div>
-  <div class="card"><canvas id="pieChart"></canvas></div>
-  <div class="card"><canvas id="lineChart"></canvas></div>
-</div>
+  <p>✔ Excel Paste Support</p>
+  <p>✔ Interactive Pivot Charts</p>
+  <p>✔ Drill-Down Analytics</p>
+  <p>✔ Export to Excel</p>
+  <p>✔ Metric Filters</p>
+  <p>✔ Collapsible Input Section</p>
+  <p>✔ Optimized Chart Copy</p>
 
 </div>
 
-<script src="app.js"></script>
+<!-- MAIN -->
+
+<div class="main">
+
+  <!-- DASHBOARD CARDS -->
+
+  <div class="cards">
+
+    <div class="card">
+      <h3>Total Members</h3>
+      <div class="value" id="totalMembers">0</div>
+    </div>
+
+    <div class="card">
+      <h3>Average Overall</h3>
+      <div class="value" id="avgOverall">0</div>
+    </div>
+
+    <div class="card">
+      <h3>Average Strength</h3>
+      <div class="value" id="avgStrength">0</div>
+    </div>
+
+    <div class="card">
+      <h3>Average Cardio</h3>
+      <div class="value" id="avgCardio">0</div>
+    </div>
+
+  </div>
+
+  <!-- INPUT -->
+
+  <div class="section">
+
+    <div
+      class="collapsible-header"
+      onclick="toggleSection('inputSection')"
+    >
+
+      <h2 style="color:#38bdf8;">
+        PFRA Data Input
+      </h2>
+
+      <span
+        class="toggle-icon"
+        id="inputSectionIcon"
+      >
+        ▼
+      </span>
+
+    </div>
+
+    <div
+      class="collapsible-content"
+      id="inputSection"
+      style="max-height:2000px;margin-top:15px;"
+    >
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Name</th>
+            <th>Overall</th>
+            <th>Waist</th>
+            <th>Strength</th>
+            <th>Endurance</th>
+            <th>Cardio</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="inputBody"></tbody>
+
+      </table>
+
+      <button onclick="processData()">
+        Process Data
+      </button>
+
+      <button onclick="exportExcel()">
+        Export to Excel
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- FILTERS -->
+
+  <div class="section">
+
+    <h2 style="margin-bottom:15px;color:#38bdf8;">
+      Pivot Chart Builder
+    </h2>
+
+    <div class="grid">
+
+      <div>
+
+        <label>Chart Type</label>
+
+        <select id="chartType">
+
+          <option value="bar">Bar</option>
+          <option value="line">Line</option>
+          <option value="radar">Radar</option>
+          <option value="pie">Pie</option>
+
+        </select>
+
+      </div>
+
+      <div>
+
+        <label>Pivot Metric</label>
+
+        <select id="pivotMetric">
+
+          <option value="overall">Overall</option>
+          <option value="waist">Waist</option>
+          <option value="strength">Strength</option>
+          <option value="endurance">Endurance</option>
+          <option value="cardio">Cardio</option>
+
+        </select>
+
+      </div>
+
+      <div>
+
+        <label>Filter Minimum Score</label>
+
+        <input type="number" id="minFilter" placeholder="0">
+
+      </div>
+
+      <div>
+
+        <label>Filter Maximum Score</label>
+
+        <input type="number" id="maxFilter" placeholder="100">
+
+      </div>
+
+    </div>
+
+    <button onclick="buildPivotChart()">
+      Generate Analytics Chart
+    </button>
+
+  </div>
+
+  <!-- CHART -->
+
+  <div class="chart-box">
+
+    <div
+      style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:20px;
+      "
+    >
+
+      <h2
+        style="
+          color:#38bdf8;
+          font-size:28px;
+        "
+      >
+        PFRA Analytics Chart
+      </h2>
+
+      <button onclick="copyChart()">
+        Copy Chart
+      </button>
+
+      <button onclick="exportDrilldownExcel()">
+        Export Drilldown Excel
+      </button>
+
+    </div>
+
+    <div class="chart-container">
+      <canvas id="chart"></canvas>
+    </div>
+
+  </div>
+
+  <!-- DRILLDOWN -->
+
+  <div class="section">
+
+    <h2 style="margin-bottom:15px;color:#38bdf8;">
+      Drill-Down Members
+    </h2>
+
+    <div id="drilldown">
+      Click a chart bar to view members
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+/* GLOBAL */
+
+let data = [];
+let chart;
+
+/* CREATE 20 ROWS */
+
+const inputBody = document.getElementById("inputBody");
+
+for(let i=0;i<20;i++){
+
+  inputBody.innerHTML += `
+
+    <tr>
+
+      <td><input></td>
+      <td><input type="number"></td>
+      <td><input type="number"></td>
+      <td><input type="number"></td>
+      <td><input type="number"></td>
+      <td><input type="number"></td>
+
+    </tr>
+
+  `;
+}
+
+/* EXCEL PASTE */
+
+document.addEventListener("paste", e => {
+
+  const active = document.activeElement;
+
+  if(active.tagName !== "INPUT") return;
+
+  e.preventDefault();
+
+  const pasted = e.clipboardData.getData("text");
+  const rows = pasted.split("\n");
+
+  const startRow =
+    active.parentElement.parentElement.rowIndex - 1;
+
+  const startCol =
+    active.parentElement.cellIndex;
+
+  rows.forEach((rowData,rowIndex)=>{
+
+    const cols = rowData.split("\t");
+
+    cols.forEach((value,colIndex)=>{
+
+      const row = inputBody.rows[startRow + rowIndex];
+
+      if(row){
+
+        const cell = row.cells[startCol + colIndex];
+
+        if(cell){
+
+          cell.querySelector("input").value =
+            value.trim();
+
+        }
+      }
+    });
+  });
+});
+
+/* PROCESS DATA */
+
+function processData(){
+
+  data = [];
+
+  for(let row of inputBody.rows){
+
+    const i = row.querySelectorAll("input");
+
+    if(i[0].value){
+
+      data.push({
+
+        name:i[0].value,
+
+        overall:+i[1].value || 0,
+        waist:+i[2].value || 0,
+        strength:+i[3].value || 0,
+        endurance:+i[4].value || 0,
+        cardio:+i[5].value || 0
+
+      });
+    }
+  }
+
+  updateCards();
+}
+
+/* DASHBOARD CARDS */
+
+function updateCards(){
+
+  const total = data.length;
+
+  document.getElementById("totalMembers").innerText =
+    total;
+
+  document.getElementById("avgOverall").innerText =
+    avg("overall");
+
+  document.getElementById("avgStrength").innerText =
+    avg("strength");
+
+  document.getElementById("avgCardio").innerText =
+    avg("cardio");
+}
+
+function avg(metric){
+
+  if(data.length === 0) return 0;
+
+  return (
+    data.reduce((a,b)=>a+b[metric],0)
+    / data.length
+  ).toFixed(1);
+}
+
+/* PIVOT CHART */
+
+function buildPivotChart(){
+
+  const type =
+    document.getElementById("chartType").value;
+
+  const metric =
+    document.getElementById("pivotMetric").value;
+
+  const min =
+    Number(document.getElementById("minFilter").value || 0);
+
+  const max =
+    Number(document.getElementById("maxFilter").value || 100);
+
+  const filtered =
+    data.filter(d =>
+      d[metric] >= min &&
+      d[metric] <= max
+    );
+
+  const ranges = {
+
+    "Below 75": [],
+    "75 - 89": [],
+    "90+": []
+
+  };
+
+  filtered.forEach(d=>{
+
+    const s = d[metric];
+
+    if(s < 75){
+      ranges["Below 75"].push(d);
+    }
+    else if(s < 90){
+      ranges["75 - 89"].push(d);
+    }
+    else{
+      ranges["90+"].push(d);
+    }
+
+  });
+
+  const labels =
+    Object.keys(ranges);
+
+  const values =
+    labels.map(r => ranges[r].length);
+
+  if(chart) chart.destroy();
+
+  chart = new Chart(
+
+    document.getElementById("chart"),
+
+    {
+
+      type: type,
+
+      data: {
+
+        labels: labels,
+
+        datasets: [{
+
+          label: "Member Count",
+
+          data: values,
+
+          backgroundColor: [
+
+            "#ef4444",
+            "#f59e0b",
+            "#22c55e"
+
+          ],
+
+          borderColor:"#38bdf8",
+          borderWidth:3
+
+        }]
+      },
+
+      options:{
+
+        responsive:true,
+        maintainAspectRatio:false,
+
+        plugins:{
+
+          title:{
+            display:true,
+            text:"PFRA Analytics Distribution",
+            color:"white",
+            font:{
+              size:22,
+              weight:"bold"
+            }
+          },
+
+          legend:{
+            labels:{
+              color:"white",
+              font:{
+                size:14
+              }
+            }
+          }
+        },
+
+        scales:
+
+          type === "pie"
+
+          ? {}
+
+          : {
+
+            x:{
+              ticks:{
+                color:"white",
+                font:{
+                  size:14
+                }
+              },
+              grid:{color:"#334155"}
+            },
+
+            y:{
+              beginAtZero:true,
+              ticks:{
+                color:"white",
+                precision:0,
+                font:{
+                  size:14
+                }
+              },
+              grid:{color:"#334155"}
+            }
+
+          },
+
+        onClick:(e,elements)=>{
+
+          if(!elements.length) return;
+
+          const index = elements[0].index;
+
+          const range = labels[index];
+
+          showDrilldown(range,ranges[range]);
+
+        }
+      }
+    }
+  );
+}
+
+/* DRILLDOWN */
+
+function showDrilldown(range, members){
+
+  drilldownData = members; // ✅ STORE for export
+
+  const box = document.getElementById("drilldown");
+
+  box.innerHTML = `
+    <h3 style="margin-bottom:15px;">
+      ${range} Members (${members.length})
+    </h3>
+  `;
+
+  if(members.length === 0){
+    box.innerHTML += `No members in this range.`;
+    return;
+  }
+
+  members.forEach(m=>{
+    box.innerHTML += `
+      <div class="drill-card">
+        <h4>${m.name}</h4>
+        <p>Overall: ${m.overall}</p>
+        <p>Waist: ${m.waist}</p>
+        <p>Strength: ${m.strength}</p>
+        <p>Endurance: ${m.endurance}</p>
+        <p>Cardio: ${m.cardio}</p>
+      </div>
+    `;
+  });
+}
+
+/* COLLAPSIBLE SECTION */
+
+function toggleSection(id){
+
+  const section =
+    document.getElementById(id);
+
+  const icon =
+    document.getElementById(id + "Icon");
+
+  const collapsed =
+    section.classList.contains("collapsed");
+
+  if(collapsed){
+
+    section.classList.remove("collapsed");
+
+    section.style.maxHeight =
+      section.scrollHeight + "px";
+
+    icon.innerHTML = "▼";
+
+  }
+  else{
+
+    section.classList.add("collapsed");
+
+    section.style.maxHeight = "0px";
+
+    icon.innerHTML = "►";
+
+  }
+}
+
+/* OPTIMIZED COPY CHART */
+
+async function copyChart(){
+
+  if(!chart){
+    alert("Please generate a chart first.");
+    return;
+  }
+
+  const originalCanvas =
+    document.getElementById("chart");
+
+  const exportCanvas =
+    document.createElement("canvas");
+
+  const ctx =
+    exportCanvas.getContext("2d");
+
+  /* 🔥 FIX 1: use real pixel size (not just scale factor) */
+  const width = originalCanvas.width;
+  const height = originalCanvas.height;
+
+  const scale = 1; // clean sweet spot for sharp images
+
+  exportCanvas.width = width * scale;
+  exportCanvas.height = height * scale;
+
+  /* 🔥 FIX 2: scale context BEFORE drawing */
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+
+  /* BACKGROUND */
+  ctx.fillStyle = "#111827";
+  ctx.fillRect(0, 0, width, height);
+
+  /* DRAW CHART (now crisp instead of stretched) */
+  ctx.drawImage(
+    originalCanvas,
+    0,
+    0,
+    width,
+    height
+  );
+
+  /* BORDER */
+  ctx.strokeStyle = "#38bdf8";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, width - 2, height - 2);
+
+  /* EXPORT */
+  exportCanvas.toBlob(async blob => {
+
+    try{
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob })
+      ]);
+
+      alert("Chart copied in high quality!");
+    }
+    catch(err){
+      console.error(err);
+      alert("Clipboard copy failed.");
+    }
+
+  }, "image/png");
+}
+
+/* EXPORT TO EXCEL */
+
+function exportExcel(){
+
+  const ws =
+    XLSX.utils.json_to_sheet(data);
+
+  const wb =
+    XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    ws,
+    "PFRA Data"
+  );
+
+  XLSX.writeFile(
+    wb,
+    "PFRA_Dashboard.xlsx"
+  );
+}
+
+/* 🔥 NEW: EXPORT DRILLDOWN EXCEL */
+function exportDrilldownExcel(){
+
+  if(!drilldownData || drilldownData.length === 0){
+    alert("Click a chart segment first.");
+    return;
+  }
+
+  const ws = XLSX.utils.json_to_sheet(drilldownData);
+  const wb = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(wb, ws, "Drilldown");
+
+  XLSX.writeFile(wb, "PFRA_Drilldown.xlsx");
+}
+
+/* Copy a DIFFERENT SECTION entirely
+
+If you ever want to copy more than the chart (like title + chart + stats), you would replace: const originalCanvas = document.getElementById("chart"); */
+
+</script>
+
 </body>
 </html>
